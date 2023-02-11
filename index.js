@@ -25,6 +25,7 @@ async function run() {
     const addProductCollection = client.db("carHandler").collection("addProduct");
     const avaliableCollection = client.db("carHandler").collection("avaliabale");
     const paymentCollection = client.db("carHandler").collection("payment");
+    const productComment = client.db("carHandler").collection("comment");
 
 
     function verifyJWT(req, res, next) {
@@ -52,7 +53,6 @@ async function run() {
                 const token = jwt.sign({ email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '10d' })
                 return res.send({ accessToken: token })
             }
-            console.log(user)
             res.status(403).send({ accessToken: '' })
         })
 
@@ -62,12 +62,17 @@ async function run() {
             const categary = await car.toArray();
             res.send(categary);
         });
+        app.get('/allCategary', async (req, res) => {
+            const query = {}
+            const car = microbusCollection.find(query);
+            const categary = await car.toArray();
+            res.send(categary);
+        });
        
-
         app.get('/allCategary/:id', async (req, res) => {
              const id = req.params.id;
-            const query = {categary_id: id };
-            const service = await microbusCollection.find(query).toArray();
+            const query = {_id: ObjectId(id)};
+            const service = await microbusCollection.findOne(query);
             res.send(service);
         })
 
@@ -96,7 +101,24 @@ async function run() {
             const booking = await bookingCollection.find(query).toArray();
             res.send(booking);
         })
+// //////////////////////
+      app.post('/comment', async(req, res) =>{
+            const users = req.body;
+            const result = await productComment.insertOne(users);
+            res.send(result);
+        })
 
+        app.get('/comment', async(req, res) =>{
+            const query = {}
+            const result = await productComment.find(query).toArray();
+            res.send(result);
+        })
+        app.delete('comment/:id',  async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await productComment.deleteOne(query)
+            res.send(result);
+        })
         /////////////////////
         app.get('/orderPayment/:id', async(req, res) =>{
             const id = req.params.id;
