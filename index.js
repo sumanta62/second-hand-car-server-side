@@ -18,7 +18,7 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
 async function run() {
 
-    const carCategaryCollection = client.db("carHandler").collection("categaries");
+    // const carCategaryCollection = client.db("carHandler").collection("categaries");
     const microbusCollection = client.db("carHandler").collection("allCategary");
     const bookingCollection = client.db("carHandler").collection("bookings");
     const usersCollection = client.db("carHandler").collection("users");
@@ -56,12 +56,12 @@ async function run() {
             res.status(403).send({ accessToken: '' })
         })
 
-        app.get('/categary', async (req, res) => {
-            const query = {}
-            const car = carCategaryCollection.find(query);
-            const categary = await car.toArray();
-            res.send(categary);
-        });
+        // app.get('/categary', async (req, res) => {
+        //     const query = {}
+        //     const car = carCategaryCollection.find(query);
+        //     const categary = await car.toArray();
+        //     res.send(categary);
+        // });
         app.get('/allCategary', async (req, res) => {
             const query = {}
             const car = microbusCollection.find(query);
@@ -91,12 +91,8 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/bookings', verifyJWT, async (req, res) => {
+        app.get('/bookings', async (req, res) => {
             const email = req.query.email;
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
             const query = { email: email };
             const booking = await bookingCollection.find(query).toArray();
             res.send(booking);
@@ -109,16 +105,30 @@ async function run() {
         })
 
         app.get('/comment', async(req, res) =>{
-            const query = {}
+            const query = {};
             const result = await productComment.find(query).toArray();
             res.send(result);
         })
-        app.delete('comment/:id',  async (req, res) => {
+        app.delete('/deleteComment/:id',  async(req, res) => {
             const id = req.params.id;
-            const query = { _id: ObjectId(id) }
-            const result = await productComment.deleteOne(query)
-            res.send(result);
+            const query = { _id: ObjectId(id) };
+            const comment = await productComment.deleteOne(query);
+            console.log(comment)
+            res.send(comment);
         })
+        app.patch("/updateComment/:id", async (req, res) => {
+            const id = req.params.id;
+            const user = req.body;
+            const query = { _id: ObjectId(id) };
+            const option = { upsert: true };
+            const updateDoc = {
+              $set: {
+                comment: user.comment,
+              },
+            };
+            const result = await productComment.updateOne(query, updateDoc, option);
+            res.send(result);
+          });
         /////////////////////
         app.get('/orderPayment/:id', async(req, res) =>{
             const id = req.params.id;
@@ -156,7 +166,7 @@ async function run() {
                 }
             }
             const updatedResult = await bookingCollection.updateOne(filter, updatedDoc)
-            res.send(result);
+            res.send(result, updatedResult);
         })
 
 
@@ -219,12 +229,8 @@ async function run() {
             res.send(result)
         })
       
-        app.get('/addProduct', verifyJWT, async (req, res) => {
+        app.get('/addProduct',async (req, res) => {
             const email = req.query.email;
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
             const query = { email: email };
             const product = await addProductCollection.find(query).toArray();
             res.send(product);
@@ -242,18 +248,13 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/available', verifyJWT, async (req, res) => {
-            const email = req.query.email;
-            const decodedEmail = req.decoded.email;
-            if (email !== decodedEmail) {
-                return res.status(403).send({ message: 'forbidden access' })
-            }
-            const query = { email: email };
+        app.get('/available', async (req, res) => {
+            const query = {};
             const booking = await avaliableCollection.find(query).toArray();
             res.send(booking);
         })
 
-        app.get('/users/seller/:user', async (req, res) => {
+        app.get('/users/seller/:user', verifyJWT, async (req, res) => {
             const users = req.query.users;
             const decodedEmail = req.decoded.users;
             if (users !== decodedEmail) {
